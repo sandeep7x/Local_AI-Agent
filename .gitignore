@@ -1,0 +1,47 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+venv311/
+.venv/
+env/
+
+# VS Code
+.vscode/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data / large binaries
+*.dll
+*.pyd
+*.so
+*.db
+*.sqlite3
+data/vector_store/
+data/vector_store_v2/
+vector_store/
+local_ai_assistant/data/vector_store/
+local_ai_assistant/data/vector_store_v2/
+local_ai_assistant/vector_store/
+
+# Logs / temp
+*.log
+*.tmp
+*.bak
+
+# Secrets / env
+.env
+*.env
+secrets.json
+
+# Windows shortcuts
+*.lnk
