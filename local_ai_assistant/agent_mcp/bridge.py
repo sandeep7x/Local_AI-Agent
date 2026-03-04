@@ -76,6 +76,10 @@ def _import_system():
     from agent_mcp.tools.system import system_chat, system_intent, system_status
     return system_chat, system_intent, system_status
 
+def _import_audio():
+    from agent_mcp.tools.audio import audio_transcribe, audio_query, audio_list
+    return audio_transcribe, audio_query, audio_list
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # MCPBridge
@@ -195,6 +199,45 @@ class MCPBridge:
             _, _, fn_top, _ = _import_documents()
             result = fn_top()
             return result if raw else result.get("topics", "Could not extract topics.")
+
+        # ── AUDIO ─────────────────────────────────────────────────────────
+        if intent == "AUDIO_TRANSCRIBE":
+            fn_tx, _, _ = _import_audio()
+            result = fn_tx(user_input.strip())
+            if raw:
+                return result
+            if result.get("success"):
+                fname    = result.get("filename", "")
+                duration = result.get("duration", "")
+                chunks   = result.get("chunks_stored", 0)
+                preview  = result.get("transcript_preview", "")
+                return (
+                    f"Transcribed '{fname}' ({duration}) — {chunks} chunks indexed.\n"
+                    f"Preview: {preview}"
+                )
+            return result.get("error", "Transcription failed.")
+
+        if intent == "AUDIO_QUERY":
+            _, fn_q, _ = _import_audio()
+            result = fn_q(user_input)
+            if raw:
+                return result
+            if result.get("success") and result.get("answer"):
+                answer  = result["answer"]
+                sources = result.get("sources", [])
+                if sources:
+                    ts_refs = ", ".join(
+                        f"{s['filename']} [{s['start_ts']} → {s['end_ts']}]"
+                        for s in sources[:3]
+                    )
+                    return f"{answer}\n\nSources: {ts_refs}"
+                return answer
+            return result.get("error", "No audio transcripts found.")
+
+        if intent == "AUDIO_LIST":
+            _, _, fn_lst = _import_audio()
+            result = fn_lst()
+            return result if raw else result.get("message", "No audio files indexed.")
 
         # ── CHAT / GENERAL (delegates to LLM) ─────────────────────────────
         if intent in ("CHAT", "GENERAL", "COMPARE"):

@@ -28,9 +28,12 @@ env/
 *.sqlite3
 data/vector_store/
 data/vector_store_v2/
+data/vector_store_audio/
+data/audio/
 vector_store/
 local_ai_assistant/data/vector_store/
 local_ai_assistant/data/vector_store_v2/
+local_ai_assistant/data/vector_store_audio/
 local_ai_assistant/vector_store/
 
 # Logs / temp

@@ -22,6 +22,11 @@ from agent_mcp.tools.system import (
     system_intent,
     system_status,
 )
+from agent_mcp.tools.audio import (
+    audio_transcribe,
+    audio_query,
+    audio_list,
+)
 
 __all__ = [
     # Reminders
@@ -41,4 +46,8 @@ __all__ = [
     "system_chat",
     "system_intent",
     "system_status",
+    # Audio
+    "audio_transcribe",
+    "audio_query",
+    "audio_list",
 ]

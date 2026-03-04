@@ -47,6 +47,10 @@ Tool catalogue
   documents.topics       Extract main topics from documents
   documents.list         List available document files
 
+  audio.transcribe       Transcribe an audio file and index in ChromaDB
+  audio.query            Q&A over audio transcripts with timestamps
+  audio.list             List all indexed audio files
+
   system.chat            Free-form LLM conversation
   system.intent          Classify a user message intent
   system.status          Server + dependency health check
@@ -80,6 +84,7 @@ from agent_mcp.tools.documents import (
     documents_search, documents_summarize, documents_topics, documents_list,
 )
 from agent_mcp.tools.system    import system_chat, system_intent, system_status
+from agent_mcp.tools.audio     import audio_transcribe, audio_query, audio_list
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Server instance
@@ -261,6 +266,84 @@ def tool_documents_list() -> dict:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# ── AUDIO TOOLS ───────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+
+@mcp.tool(name="audio.transcribe")
+def tool_audio_transcribe(
+    file_path: str,
+    model_size: str = "base",
+) -> dict:
+    """
+    Transcribe an audio file and index the transcript in ChromaDB.
+
+    Accepts .wav, .mp3, .m4a, .flac, .ogg, .webm files.
+    Timestamps are preserved for every transcript chunk so that
+    audio.query can reference exact positions in the recording.
+
+    Example input from user:
+      "Transcribe data/audio/meeting.mp3"
+      "Index the voice note at /home/user/note.wav"
+
+    Args:
+        file_path:  Path to the audio file (absolute or relative to project root).
+        model_size: Faster-Whisper model size: tiny | base | small | medium | large
+                    (default "base" — good accuracy, fast on CPU).
+
+    Returns:
+        A dict with keys: success, filename, duration, segments,
+        chunks_stored, transcript_preview.
+    """
+    return audio_transcribe(file_path, model_size=model_size)
+
+
+@mcp.tool(name="audio.query")
+def tool_audio_query(
+    query: str,
+    filename: str = "",
+    model: str = "llama3.2:1b",
+    top_k: int = 5,
+) -> dict:
+    """
+    Answer a question about a transcribed audio recording.
+
+    Runs a semantic search over all indexed audio transcript chunks,
+    retrieves the most relevant segments (with timestamps), and asks
+    the LLM to synthesise a grounded answer referencing exact timestamps.
+
+    Example queries:
+      "What was discussed in the meeting?"
+      "Summarise the audio note."
+      "When was robotics mentioned in the meeting?"
+      "What action items were agreed?"
+
+    Args:
+        query:    Natural-language question about the audio content.
+        filename: Optional — restrict search to a specific audio file.
+                  Leave blank to search ALL indexed audio.
+        model:    Ollama model name (default: llama3.2:1b).
+        top_k:    Number of transcript chunks to retrieve (default 5).
+
+    Returns:
+        A dict with keys: success, query, answer,
+        sources [{filename, start_ts, end_ts, snippet}].
+    """
+    return audio_query(query, filename=filename, model=model, top_k=top_k)
+
+
+@mcp.tool(name="audio.list")
+def tool_audio_list() -> dict:
+    """
+    List all audio files that have been transcribed and indexed.
+
+    Returns:
+        A dict with keys: success, files [{filename, source, indexed_date, duration}],
+        message (human-readable summary).
+    """
+    return audio_list()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # ── SYSTEM TOOLS ──────────────────────────────────────────────────────────────
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -348,6 +431,7 @@ def main(transport: str = "stdio", port: int = 8765, list_tools: bool = False):
             "documents.search", "documents.summarize", "documents.topics",
             "documents.list",
             "system.chat", "system.intent", "system.status",
+            "audio.transcribe", "audio.query", "audio.list",
         ]
         print("Registered MCP tools:")
         for name in registered:

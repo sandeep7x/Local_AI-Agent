@@ -32,6 +32,9 @@ SUMMARY        - summarising or giving an overview of one or more documents
 TOPIC          - asking what topics or themes are in the documents
 RETRIEVAL      - asking a specific question whose answer may be in local documents (PDFs, CSVs, images)
 COMPARE        - comparing two things (vs, better, pros and cons, difference)
+AUDIO_TRANSCRIBE - transcribing, uploading, indexing an audio file (.mp3, .wav, .m4a)
+AUDIO_QUERY    - asking a question about audio content, a meeting recording, or a voice note
+AUDIO_LIST     - listing indexed audio files
 CHAT           - purely conversational message that does NOT require documents (jokes, opinions, general knowledge, how are you)
 GENERAL        - anything else / unclear
 
@@ -41,6 +44,8 @@ Rules:
 - If the message asks about content inside documents (PDF, CSV, internship, company data, etc.) → RETRIEVAL or SUMMARY
 - If the message asks a factual question about "the company", employees, revenue, products, plans, expansion, etc. → RETRIEVAL
 - If the message asks "when will", "when did", "how many", "what year", "who is", "what is the" about a specific entity/fact → RETRIEVAL
+- If the message mentions "meeting recording", "audio", "voice note", "transcribe", ".mp3", ".wav", ".m4a" → AUDIO_TRANSCRIBE or AUDIO_QUERY
+- If the message asks what was discussed or said in a recording → AUDIO_QUERY
 - If the message is pure small-talk or conversational with no document/email/reminder context → CHAT
 - When in doubt between RETRIEVAL and GENERAL, prefer RETRIEVAL for factual questions.
 - Output ONLY the intent label. No explanation. No punctuation."""
@@ -65,6 +70,7 @@ def _llm_classify(user_input: str) -> str:
             "REMINDER_SET", "REMINDER_LIST", "REMINDER_DELETE",
             "EMAIL_SUMMARY", "EMAIL_SEARCH",
             "DOCUMENT_LIST", "SUMMARY", "TOPIC", "RETRIEVAL",
+            "AUDIO_TRANSCRIBE", "AUDIO_QUERY", "AUDIO_LIST",
             "COMPARE", "CHAT", "GENERAL",
         }
         return label if label in valid else "GENERAL"
@@ -138,6 +144,14 @@ def _regex_fastpath(text: str):
     if re.search(r"\b(tell me about|what do you know about|information on|details (about|on)|facts (about|on)|who is|what is the (plan|goal|target|strategy|vision|mission|revenue|budget|status|progress|result|outcome))\b", text):
         if not re.search(r"\b(yourself|you)\b", text):
             return "RETRIEVAL"
+
+    # ---- Audio ----
+    if re.search(r"\b(transcribe|transcript|audio|recording|voice note|meeting recording|m4a|mp3|wav|flac)\b", text):
+        if re.search(r"\b(list|show|what|display|index(ed)?)\b", text):
+            return "AUDIO_LIST"
+        if re.search(r"\b(transcribe|index|upload|process|add|analyse|analyze)\b", text):
+            return "AUDIO_TRANSCRIBE"
+        return "AUDIO_QUERY"
 
     # ---- Time / date (fast-path) ----
     if re.search(r"\b(what|current|tell me the|show me the)\b.*(time)\b", text):
