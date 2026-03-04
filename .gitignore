@@ -26,6 +26,13 @@ env/
 *.so
 *.db
 *.sqlite3
+*.mp3
+*.mp4
+*.m4a
+*.wav
+*.flac
+*.ogg
+*.webm
 data/vector_store/
 data/vector_store_v2/
 data/vector_store_audio/
